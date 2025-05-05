@@ -1,0 +1,11 @@
+@using BlazorChatApp.Shared
+@using Microsoft.AspNetCore.Components.Routing
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(BaseConnectedLayout)" />
+    </Found>
+    <NotFound>
+        <RedirectToLogin />
+    </NotFound>
+</Router>

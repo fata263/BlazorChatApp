@@ -1,0 +1,76 @@
+﻿@page "/event/edit/{EventId:int}"
+@using System.Net.Http.Json
+@using BlazorChatApp.services
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject AppStatusService StatusService
+@inject SignalRService SignalR
+
+<h3>✏️ Edit Event</h3>
+
+@if (CurrentEvent == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EventCard Event="CurrentEvent"
+               OnResolve="Resolve"
+               OnPromote="Promote"
+               OnForward="Forward" />
+    <button class="btn btn-secondary mt-3" @onclick="@(ToChat)">← Back to Chat</button>
+}
+
+@code {
+    [Parameter] public int EventId { get; set; }
+
+    private AppEvent? CurrentEvent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            CurrentEvent = await Http.GetFromJsonAsync<AppEvent>($"api/events/{EventId}");
+        }
+        catch (Exception ex)
+        {
+            StatusService.ReportError("Failed to load event: " + ex.Message);
+        }
+    }
+
+    private async Task Resolve()
+    {
+        if (CurrentEvent == null) return;
+
+        CurrentEvent.State = EventState.Closed;
+        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
+        await SignalR.NotifyEventUpdated(CurrentEvent);
+        Nav.NavigateTo("/chat", true);
+    }
+
+    private async Task Promote()
+    {
+        if (CurrentEvent == null) return;
+
+        if (CurrentEvent.State == EventState.New)
+            CurrentEvent.State = EventState.Active;
+
+        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
+        await SignalR.NotifyEventUpdated(CurrentEvent);
+    }
+
+    
+    private void ToChat()
+    {
+        Nav.NavigateTo("/chat", true);
+    }
+
+    private async Task Forward(string username)
+    {
+        if (CurrentEvent == null) return;
+
+        CurrentEvent.ForwardedTo = username;
+        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
+        await SignalR.NotifyEventUpdated(CurrentEvent);
+    }
+}

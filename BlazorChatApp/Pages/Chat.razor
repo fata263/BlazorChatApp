@@ -1,0 +1,121 @@
+@page "/chat"
+@using System.Text.Json
+@using BlazorChatApp.services
+@using Microsoft.JSInterop
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SignalRService SignalR
+@inject AppStatusService StatusService
+
+<h3>💬 Chat</h3>
+
+@if (string.IsNullOrWhiteSpace(Username))
+{
+    <p>Loading session...</p>
+}
+else
+{
+    <div class="chat-container">
+        <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-outline-primary" @onclick="GoToEvent">
+                ➕ Raise New Event
+            </button>
+        </div>
+
+        @foreach (var evt in IncomingEvents)
+        {
+            <div class="event-card @evt.Type.ToString().ToLower()">
+                <div class="event-header">
+                    <span>@evt.Type — @evt.State</span>
+                    <span class="text-muted">(@evt.Timestamp.ToLocalTime())</span>
+                </div>
+                <div class="event-message">
+                    @DisplayEventDetails(evt)
+                </div>
+                <div class="event-actions">
+                    <button class="btn btn-sm btn-outline-primary" @onclick="@(() => EditEvent(evt.Id))">✏️ Edit</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string Username = "";
+    private bool IsConnected = false;
+    private bool Initialized = false;
+
+    public List<AppEvent> IncomingEvents { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || Initialized) return;
+
+        Username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username") ?? "";
+        var stationId = int.Parse(await JS.InvokeAsync<string>("sessionStorage.getItem", "stationId"));
+
+        if (string.IsNullOrWhiteSpace(Username))
+        {
+            Nav.NavigateTo("/login", true);
+            return;
+        }
+
+        await SignalR.StartAsync(Nav.BaseUri, Username, stationId);
+
+        IncomingEvents = SignalR.ReceivedEvents;
+
+        SignalR.OnEventReceived += async evt =>
+        {
+            IncomingEvents.Insert(0, evt);
+            if (IncomingEvents.Count > 20)
+                IncomingEvents = IncomingEvents.Take(20).ToList();
+            await InvokeAsync(StateHasChanged);
+        };
+
+        SignalR.OnEventUpdated += async updated =>
+        {
+            var index = IncomingEvents.FindIndex(e => e.Id == updated.Id);
+            if (index >= 0)
+                IncomingEvents[index] = updated;
+            else
+                IncomingEvents.Insert(0, updated);
+
+            await InvokeAsync(StateHasChanged);
+        };
+
+        Initialized = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void EditEvent(int eventId)
+    {
+        Nav.NavigateTo($"/event/edit/{eventId}");
+    }
+
+    private void GoToEvent()
+    {
+        Nav.NavigateTo($"/event");
+    }
+
+    private string DisplayEventDetails(AppEvent evt)
+    {
+        try
+        {
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(evt.JsonData);
+            var desc = data?.ContainsKey("description") == true ? data["description"] : "";
+
+            if (evt.Type == EventType.Alarm && data != null && data.ContainsKey("alarmType"))
+                return $"🚨 Alarm Type: {data["alarmType"]}, Desc: {desc}";
+
+            if (evt.Type == EventType.Incident && data != null && data.ContainsKey("severity"))
+                return $"⚠️ Severity: {data["severity"]}, Desc: {desc}";
+
+            return $"💬 {desc}";
+        }
+        catch(Exception ex)
+        {
+            StatusService.ReportError(ex.Message);
+            return "(invalid data)";
+        }
+    }
+}

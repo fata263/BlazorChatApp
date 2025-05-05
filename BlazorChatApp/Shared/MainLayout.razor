@@ -1,0 +1,52 @@
+﻿@using BlazorChatApp.services
+@using Microsoft.JSInterop
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject SignalRService SignalR
+@inject AppStatusService StatusService
+@inject UserService UserService
+
+<div class="app-container">
+
+    <!-- 🔵 Header -->
+    <div class="main-header">
+        <div>
+            🛠️ Tire Alert System — Station: @UserService.CurrentStationName
+        </div>
+        <div style="margin-left: auto;">
+            👤 @UserService.CurrentUser?.FullName (@UserService.CurrentUser?.Role)
+        </div>
+    </div>
+
+    <!-- 🔷 Main layout structure -->
+    <div class="app-layout">
+
+        <!-- 📋 Sidebar -->
+        <div class="main-sidebar">
+            <Shared.Sidebar />
+        </div>
+
+        <!-- 📄 Page content -->
+        <div class="app-body">
+            @Body
+        </div>
+
+        <!-- 🔔 Event panel -->
+        <div class="event-panel">
+            <Shared.EventPanel />
+        </div>
+
+    </div>
+
+    <!-- 🔻 Footer -->
+    <div class="footer-bar">
+        @StatusService.LatestMessage
+    </div>
+
+</div>
+
+
+@code {
+
+}

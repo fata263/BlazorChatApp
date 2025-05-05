@@ -1,0 +1,44 @@
+﻿@inject SignalRService SignalR
+
+@if (GroupedUsers.Count == 0)
+{
+    <p>No users online.</p>
+}
+else
+{
+    @foreach (var roleGroup in GroupedUsers)
+    {
+        <div class="role-header">@roleGroup.Key</div>
+        @foreach (var stationGroup in roleGroup.Value)
+        {
+            <div class="station-group">
+                📍 @stationGroup.Key
+                <ul>
+                    @foreach (var user in stationGroup.Value)
+                    {
+                        <li>@user.FullName (@user.Username)</li>
+                    }
+                </ul>
+            </div>
+        }
+    }
+}
+
+@code {
+    private Dictionary<UserRole, Dictionary<int, List<AppUser>>> GroupedUsers = new();
+    
+    protected override void OnInitialized()
+    {
+        SignalR.OnUserListUpdated += users =>
+        {
+            GroupedUsers = users
+                .GroupBy(u => u.Role)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(u => u.StationId ?? 0)
+                        .ToDictionary(sg => sg.Key, sg => sg.ToList())
+                );
+            InvokeAsync(StateHasChanged);
+        };
+    }
+}

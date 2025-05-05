@@ -1,0 +1,89 @@
+﻿@using BlazorChatApp.services
+@using Microsoft.JSInterop
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject SignalRService SignalR
+@inject AppStatusService StatusService
+@inject UserService UserService
+
+<div class="app-container">
+
+    <!-- 🔵 Header -->
+    <div class="main-header">
+        <div>
+            🛠️ Tire Alert System — Station: @UserService.CurrentStationName
+        </div>
+        <div style="margin-left: auto;">
+            👤 @UserService.CurrentUser?.FullName (@UserService.CurrentUser?.Role)
+        </div>
+    </div>
+
+    <!-- 🔷 Main layout structure -->
+    <div class="app-layout">
+
+        <!-- 📋 Sidebar -->
+        <div class="main-sidebar">
+            <Sidebar />
+        </div>
+
+        <!-- 📄 Page content -->
+        <div class="app-body">
+            @Body
+        </div>
+
+        <!-- 🔔 Event panel -->
+        <div class="event-panel">
+            <EventPanel />
+        </div>
+
+    </div>
+
+    <!-- 🔻 Footer -->
+    <div class="footer-bar">
+        @StatusService.LatestMessage
+    </div>
+
+</div>
+
+
+@code {
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized)
+            return;
+
+        try
+        {
+            var username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username");
+            var role = await JS.InvokeAsync<string>("sessionStorage.getItem", "role");
+            var station = await JS.InvokeAsync<string>("sessionStorage.getItem", "stationName");
+
+            if (string.IsNullOrEmpty(username) && !Nav.Uri.Contains("/login") && !Nav.Uri.Contains("/register"))
+            {
+                Nav.NavigateTo("/login", true);
+                return;
+            }
+
+            // Update user service from session if not already set
+            if (UserService.CurrentUser == null)
+            {
+                UserService.SetUser(new AppUser
+                {
+                    Username = username,
+                    Role = Enum.TryParse<UserRole>(role, out var r) ? r : UserRole.Operator,
+                    // Optionally fetch from DB if needed
+                });
+            }
+
+            // await SignalR.StartAsync(Nav.BaseUri);
+            _initialized = true;
+        }
+        catch (Exception ex)
+        {
+            StatusService.ReportError("🚫 SignalR connection failed: " + ex.Message);
+        }
+    }
+}

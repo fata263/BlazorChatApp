@@ -1,0 +1,66 @@
+﻿@page "/logs"
+@using System.Net.Http.Json
+@using BlazorChatApp.services
+@using BlazorChatApp.Shared
+@layout BaseConnectedLayout
+@inject HttpClient Http
+@inject AppStatusService StatusService
+
+<h3>📋 System Logs</h3>
+
+
+    <div class="log-controls">
+        <label>Filter:</label>
+        <select @bind="SelectedLogLevel" class="form-select" style="width: 200px;">
+            <option value="">All</option>
+            @foreach (var level in Enum.GetValues<LogLevel>())
+            {
+                <option value="@level">@level</option>
+            }
+        </select>
+
+    </div>
+
+    <table class="table table-sm table-striped">
+        <thead>
+        <tr>
+            <th>Time</th>
+            <th>User</th>
+            <th>Level</th>
+            <th>Message</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var log in FilteredLogs)
+        {
+            <tr>
+                <td>@log.Timestamp.ToLocalTime()</td>
+                <td>@log.Username</td>
+                <td>@log.Level</td>
+                <td>@log.Message</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+@code {
+    private List<AppLog> AllLogs = new();
+    private LogLevel? SelectedLogLevel = null;
+
+    private List<AppLog> FilteredLogs =>
+        SelectedLogLevel == null
+            ? AllLogs
+            : AllLogs.Where(l => l.Level == SelectedLogLevel).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            AllLogs = await Http.GetFromJsonAsync<List<AppLog>>("api/logs") ?? new();
+        }
+        catch (Exception ex)
+        {
+            StatusService.ReportError("⚠ Failed to load logs: " + ex.Message);
+        }
+    }
+}

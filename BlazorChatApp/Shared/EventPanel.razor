@@ -1,0 +1,52 @@
+﻿
+@inject SignalRService SignalR
+
+<section class="event-panel-group">
+    <div class="event-panel-section">
+        <h6>🚨 Alarms</h6>
+        <div class="event-panel-scroll">
+            @foreach (var evt in SafeEvents.Where(e => e.Type == EventType.Alarm))
+            {
+                <EventCard Event="evt" />
+            }
+        </div>
+    </div>
+
+    <div class="event-panel-section">
+        <h6>⚠️ Incidents</h6>
+        <div class="event-panel-scroll">
+            @foreach (var evt in SafeEvents.Where(e => e.Type == EventType.Incident))
+            {
+                <EventCard Event="evt" />
+            }
+        </div>
+    </div>
+
+    <div class="event-panel-section">
+        <h6>💬 Messages</h6>
+        <div class="event-panel-scroll">
+            @foreach (var evt in SafeEvents.Where(e => e.Type == EventType.Message))
+            {
+                <EventCard Event="evt" />
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<AppEvent> _events = new();
+    private List<AppEvent> SafeEvents => _events?.ToList() ?? new();
+
+
+    protected override void OnInitialized()
+    {
+        SignalR.OnEventReceived += async evt =>
+        {
+            _events.Insert(0, evt);
+            if (_events.Count > 30)
+                _events.RemoveAt(30);
+
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+}

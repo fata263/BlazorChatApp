@@ -1,0 +1,20 @@
+﻿@using BlazorChatApp.services
+@code {
+    [Parameter]
+    public string DefaultMessage { get; set; } = "✅ System ready.";
+
+    private string Message;
+
+    [Inject] AppStatusService StatusService { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Message = DefaultMessage;
+
+        StatusService.OnError += msg =>
+        {
+            Message = msg;
+            InvokeAsync(StateHasChanged);
+        };
+    }
+}

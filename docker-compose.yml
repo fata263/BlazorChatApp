@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  blazorchat:
+    image: blazorchatappnet9
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
