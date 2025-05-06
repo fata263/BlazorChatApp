@@ -24,7 +24,7 @@ builder.Services.AddDbContext<ChatDbContext>(options =>
     options.UseSqlite("Data Source=chat.db"));
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<SignalRService>();      // Per user SignalR conn
+builder.Services.AddScoped<SignalRService>();      // Per user SignalR conn
 builder.Services.AddScoped<UserService>();         // Per user
 builder.Services.AddScoped<AppStatusService>();    // Safe access to DbContext
 

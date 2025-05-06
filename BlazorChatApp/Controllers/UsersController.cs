@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.Data;
 
 namespace BlazorChatApp.Controllers
 {
@@ -18,6 +17,10 @@ namespace BlazorChatApp.Controllers
         {
             return await context.Users.Include(u => u.Supervisor).ToListAsync();
         }
+
+        [HttpGet("api/users")]
+        public async Task<List<AppUser>> GetUsers() =>
+            await context.Users.ToListAsync();
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(AppUser user)

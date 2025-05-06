@@ -6,6 +6,9 @@
 @inject IJSRuntime JS
 @inject SignalRService SignalR
 @inject AppStatusService StatusService
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+
 
 <h3>📝 Create and Send Event</h3>
 
@@ -15,100 +18,105 @@
 }
 else
 {
-    <EditForm OnValidSubmit="SendEvent">
-        <div class="form-group">
-            <label>Event Type:</label>
-            <InputSelect @bind="Type" class="form-control">
-                @foreach (var val in Enum.GetValues(typeof(EventType)))
-                {
-                    <option value="@val">@val</option>
-                }
-            </InputSelect>
-        </div>
+    <EditForm Model="Form" OnValidSubmit="SendEvent" class="event-form">
+    <h3>🚨 Create and Send Event</h3>
 
+    <div class="form-group">
+        <label>Event Type:</label>
+        <InputSelect @bind-Value="Form.Type">
+            @foreach (var val in Enum.GetValues(typeof(EventType)))
+            {
+                <option value="@val">@val</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Scope:</label>
+        <InputSelect @bind-Value="Form.Scope">
+            @foreach (var scope in Enum.GetValues(typeof(EventScope)))
+            {
+                <option value="@scope">@scope</option>
+            }
+        </InputSelect>
+    </div>
+
+    @if (Form.Scope == EventScope.Private)
+    {
         <div class="form-group mt-2">
-            <label>Scope:</label>
-            <InputSelect @bind="Scope" class="form-control">
-                @foreach (var scope in Enum.GetValues(typeof(EventScope)))
-                {
-                    <option value="@scope">@scope</option>
-                }
+            <label>Forward To (Username):</label>
+            <InputText @bind-Value="Form.ForwardedTo" />
+        </div>
+    }
+
+    @if (Form.Type == EventType.Message)
+    {
+        <div class="form-group mt-3">
+            <label>Message:</label>
+            <InputTextArea @bind-Value="Form.MessageContent" />
+        </div>
+    }
+    else if (Form.Type == EventType.Incident)
+    {
+        <div class="form-group mt-3">
+            <label>Severity:</label>
+            <InputSelect @bind-Value="Form.IncidentSeverity">
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
             </InputSelect>
+
+            <label class="mt-2">Description:</label>
+            <InputTextArea @bind-Value="Form.IncidentDescription" />
         </div>
+    }
+    else if (Form.Type == EventType.Alarm)
+    {
+        <div class="form-group mt-3">
+            <label>Alarm Type:</label>
+            <InputSelect @bind-Value="Form.AlarmType">
+                <option>Fire</option>
+                <option>Security</option>
+                <option>System</option>
+            </InputSelect>
 
-        @if (Scope == EventScope.Private)
-        {
-            <div class="form-group mt-2">
-                <label>Forward To (Username):</label>
-                <InputText class="form-control" @bind="ForwardedTo" />
-            </div>
-        }
-
-        <!-- Dynamic Fields -->
-        @if (Type == EventType.Message)
-        {
-            <div class="form-group mt-3">
-                <label>Message:</label>
-                <InputTextArea class="form-control" @bind="MessageContent" />
-            </div>
-        }
-        else if (Type == EventType.Incident)
-        {
-            <div class="form-group mt-3">
-                <label>Severity:</label>
-                <InputSelect @bind="IncidentSeverity" class="form-control">
-                    <option>Low</option>
-                    <option>Medium</option>
-                    <option>High</option>
-                </InputSelect>
-                <label class="mt-2">Description:</label>
-                <InputTextArea class="form-control" @bind="IncidentDescription" />
-            </div>
-        }
-        else if (Type == EventType.Alarm)
-        {
-            <div class="form-group mt-3">
-                <label>Alarm Type:</label>
-                <InputSelect @bind="AlarmType" class="form-control">
-                    <option>Fire</option>
-                    <option>Security</option>
-                    <option>System</option>
-                </InputSelect>
-                <label class="mt-2">Description:</label>
-                <InputTextArea class="form-control" @bind="AlarmDescription" />
-            </div>
-        }
-
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary">✅ Send Event</button>
-            <button type="button" class="btn btn-secondary ms-3" @onclick="GoToChat">← Back to Chat</button>
+            <label class="mt-2">Description:</label>
+            <InputTextArea @bind-Value="Form.AlarmDescription" />
         </div>
+    }
 
-        @if (!string.IsNullOrWhiteSpace(SuccessMessage))
-        {
-            <div class="alert alert-success mt-3">@SuccessMessage</div>
-        }
-    </EditForm>
+    <div class="mt-4 d-flex justify-content-between">
+        <button type="submit" class="btn-send">✅ Send Event</button>
+        <button type="button" class="btn-nav" @onclick="GoToChat">← Back to Chat</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="alert alert-success mt-3">@SuccessMessage</div>
+    }
+</EditForm>
+
 }
 
 @code {
     private bool initialized = false;
     private string Username = "";
     private int StationId = 0;
-
-    private EventType Type = EventType.Message;
-    private EventScope Scope = EventScope.All;
-    private EventState State = EventState.New;
-
-    private string ForwardedTo = "";
-    private string JsonData = "{}";
-    private string MessageContent = "";
-    private string IncidentSeverity = "Low";
-    private string IncidentDescription = "";
-    private string AlarmType = "Fire";
-    private string AlarmDescription = "";
-
     private string SuccessMessage = "";
+
+    private EventFormModel Form = new();
+
+    private class EventFormModel
+    {
+        public EventType Type { get; set; } = EventType.Message;
+        public EventScope Scope { get; set; } = EventScope.All;
+        public string ForwardedTo { get; set; } = "";
+        public string MessageContent { get; set; } = "";
+        public string IncidentSeverity { get; set; } = "Low";
+        public string IncidentDescription { get; set; } = "";
+        public string AlarmType { get; set; } = "Fire";
+        public string AlarmDescription { get; set; } = "";
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -140,36 +148,30 @@ else
     {
         try
         {
-            object? details = null;
+            string jsonData = "{}";
 
-            if (Type == EventType.Message)
-            {
-                details = new { Description = MessageContent };
-            }
-            else if (Type == EventType.Incident)
-            {
-                details = new { Severity = IncidentSeverity, Description = IncidentDescription };
-            }
-            else if (Type == EventType.Alarm)
-            {
-                details = new { AlarmType = AlarmType, Description = AlarmDescription };
-            }
+            if (Form.Type == EventType.Message)
+                jsonData = JsonSerializer.Serialize(new { Description = Form.MessageContent });
 
-            JsonData = JsonSerializer.Serialize(details ?? new { });
+            else if (Form.Type == EventType.Incident)
+                jsonData = JsonSerializer.Serialize(new { Severity = Form.IncidentSeverity, Description = Form.IncidentDescription });
+
+            else if (Form.Type == EventType.Alarm)
+                jsonData = JsonSerializer.Serialize(new { AlarmType = Form.AlarmType, Description = Form.AlarmDescription });
 
             var evt = new AppEvent
             {
                 Sender = Username,
                 StationId = StationId,
-                Type = Type,
-                Scope = Scope,
-                State = State,
-                JsonData = JsonData,
-                ForwardedTo = Scope == EventScope.Private ? ForwardedTo : null,
+                Type = Form.Type,
+                Scope = Form.Scope,
+                State = EventState.New,
+                JsonData = jsonData,
+                ForwardedTo = Form.Scope == EventScope.Private ? Form.ForwardedTo : null,
                 Timestamp = DateTime.UtcNow
             };
 
-            await SignalR.SendEvent(evt);
+            await SignalR.SendEvent(evt, Form.ForwardedTo, Form.Scope.ToString());
             SuccessMessage = "✅ Event sent successfully.";
         }
         catch (Exception ex)
@@ -178,7 +180,6 @@ else
         }
     }
 
-    
     private void GoToChat()
     {
         Nav.NavigateTo($"/chat");

@@ -47,6 +47,7 @@ else
 
     public List<AppEvent> IncomingEvents { get; set; } = new();
 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || Initialized) return;
@@ -61,15 +62,20 @@ else
         }
 
         await SignalR.StartAsync(Nav.BaseUri, Username, stationId);
-
-        IncomingEvents = SignalR.ReceivedEvents;
+        var recentEvents = await SignalR.LoadRecentEventsAsync();
+        if (recentEvents != null)
+            IncomingEvents = recentEvents;
 
         SignalR.OnEventReceived += async evt =>
         {
-            IncomingEvents.Insert(0, evt);
-            if (IncomingEvents.Count > 20)
-                IncomingEvents = IncomingEvents.Take(20).ToList();
-            await InvokeAsync(StateHasChanged);
+            if (IncomingEvents.All(e => e.Id != evt.Id))
+            {
+                IncomingEvents.Insert(0, evt);
+                if (IncomingEvents.Count > 20)
+                    IncomingEvents = IncomingEvents.Take(20).ToList();
+
+                await InvokeAsync(StateHasChanged);
+            }
         };
 
         SignalR.OnEventUpdated += async updated =>

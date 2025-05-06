@@ -102,55 +102,161 @@ h3 {
     padding: 8px;
 }
 
+.event-panel-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.event-group {
+    background: #f7f9fb;
+    border-left: 5px solid #ccc;
+    border-radius: 6px;
+    padding: 0.5rem;
+    height: 30%;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-group-header {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.event-scroll {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.empty-text {
+    font-size: 0.9rem;
+    color: #888;
+    padding-left: 0.5rem;
+}
+
+.alarm-group {
+    border-left-color: #f44336;
+}
+
+.incident-group {
+    border-left-color: #ff9800;
+}
+
+.message-group {
+    border-left-color: #2196f3;
+}
+
 /* ─────────────── EVENTS ─────────────── */
 .event-card {
-    background: #fff;
-    border-left: 5px solid #007bff;
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    transition: transform 0.1s ease-in-out;
+    background-color: #fff;
+    border-left: 6px solid var(--type-color, #ccc);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-    .event-card:hover {
-        transform: scale(1.01);
+    .event-card .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
     }
 
-    /* Type-based colors + emoji hint */
-    .event-card.alarm {
-        border-left-color: red;
-        background: #ffe5e5;
+    .event-card .event-icon {
+        font-size: 1.4rem;
+        margin-right: 0.5rem;
     }
 
-        .event-card.alarm::before {
-            content: "🚨 ";
-        }
-
-    .event-card.incident {
-        border-left-color: orange;
-        background: #fff3e0;
+    .event-card .event-meta {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.3rem;
     }
 
-        .event-card.incident::before {
-            content: "⚠️ ";
-        }
-
-    .event-card.message {
-        border-left-color: #007bff;
-        background: #e6f2ff;
+    .event-card .event-state.badge {
+        background-color: #eef;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 0.75rem;
     }
 
-        .event-card.message::before {
-            content: "💬 ";
-        }
+    .event-card .event-message {
+        margin-top: 0.75rem;
+        font-size: 0.95rem;
+    }
 
-.event-header {
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
+    .event-card .event-actions {
+        margin-top: 0.75rem;
+        text-align: right;
+    }
+
+.btn-small {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: none;
+    background-color: #eee;
+    cursor: pointer;
 }
+
+    .btn-small:hover {
+        background-color: #ddd;
+    }
+
+/* Type-based classes */
+.event-card.message {
+    border-color: #2196f3;
+}
+
+.event-card.incident {
+    border-color: #ff9800;
+}
+
+.event-card.alarm {
+    border-color: #f44336;
+}
+
+.forwarded {
+    font-style: italic;
+    color: #444;
+}
+
+.event-card:hover {
+    transform: scale(1.01);
+}
+
+/* Type-based colors + emoji hint */
+.event-card.alarm {
+    border-left-color: red;
+    background: #ffe5e5;
+}
+
+    .event-card.alarm::before {
+        content: "🚨 ";
+    }
+
+.event-card.incident {
+    border-left-color: orange;
+    background: #fff3e0;
+}
+
+    .event-card.incident::before {
+        content: "⚠️ ";
+    }
+
+.event-card.message {
+    border-left-color: #007bff;
+    background: #e6f2ff;
+}
+
+    .event-card.message::before {
+        content: "💬 ";
+    }
 
 .event-details {
     font-size: 0.85rem;
@@ -161,15 +267,36 @@ h3 {
     margin: 4px 0;
 }
 
+.event-card.event-closed {
+    opacity: 0.6;
+    pointer-events: none;
+    background-color: #f9f9f9;
+    border-left-color: #ccc;
+    position: relative;
+}
+
+    .event-card.event-closed::after {
+        content: "🛑 Closed";
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        font-size: 0.8rem;
+        color: #888;
+    }
+
 /* ─────────────── FORMS ─────────────── */
+.form-group {
+    margin-bottom: 1rem;
+}
+
 .auth-form,
 .event-form {
-    max-width: 500px;
-    margin: 3rem auto;
-    padding: 2rem;
-    background-color: #fdfdfd;
+    max-width: 640px;
+    margin: 20px auto;
+    padding: 1.5rem;
+    background: #fff;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
     .auth-form input,

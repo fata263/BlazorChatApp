@@ -1,76 +1,134 @@
 ﻿@page "/event/edit/{EventId:int}"
 @using System.Net.Http.Json
+@using BlazorChatApp.Shared
 @using BlazorChatApp.services
-@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Nav
+@inject HttpClient Http
 @inject AppStatusService StatusService
-@inject SignalRService SignalR
 
-<h3>✏️ Edit Event</h3>
+<h3>📝 Edit Event</h3>
 
-@if (CurrentEvent == null)
+@if (Event == null)
 {
-    <p>Loading...</p>
+    <p>Loading event...</p>
 }
 else
 {
-    <EventCard Event="CurrentEvent"
-               OnResolve="Resolve"
-               OnPromote="Promote"
-               OnForward="Forward" />
-    <button class="btn btn-secondary mt-3" @onclick="@(ToChat)">← Back to Chat</button>
+    <div class="event-form">
+        <EventCard AppEvent="Event" ShowEdit="false" />
+
+        @if (!IsClosed)
+        {
+            <div class="action-buttons">
+                <button class="btn-send" @onclick="MarkAsActive">Activate</button>
+                <button class="btn-send" @onclick="ResolveEvent">Resolve</button>
+            </div>
+
+            <div class="forward-section mt-3">
+                <label for="forwardTo"><strong>Forward to another user:</strong></label>
+                <InputSelect id="forwardTo" class="form-control" @bind-Value="ForwardedTo">
+                    <option value="">-- Select user --</option>
+                    @foreach (var user in ForwardableUsers)
+                    {
+                        <option value="@user.Username">@user.FirstName @user.LastName (@user.Role)</option>
+                    }
+                </InputSelect>
+
+                <div class="form-actions mt-2">
+                    <button class="btn-send" @onclick="ForwardEvent" disabled="@string.IsNullOrWhiteSpace(ForwardedTo)">Send</button>
+                    <button class="btn-nav" @onclick="() => ForwardedTo = string.Empty">Cancel</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">🛑 This event is closed and cannot be modified.</p>
+        }
+
+        <button class="btn-nav mt-4" @onclick="GoToChat">← Back to Chat</button>
+
+        @if (!string.IsNullOrEmpty(StatusMessage))
+        {
+            <div class="text-success status-msg mt-2">
+                ✅ @StatusMessage
+            </div>
+        }
+    </div>
 }
 
 @code {
     [Parameter] public int EventId { get; set; }
+    private List<AppUser> ForwardableUsers = new();
 
-    private AppEvent? CurrentEvent;
+    private AppEvent? Event;
+    private string ForwardedTo = string.Empty;
+    private string StatusMessage = "";
+
+    private bool IsClosed => Event?.State == EventState.Closed;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            CurrentEvent = await Http.GetFromJsonAsync<AppEvent>($"api/events/{EventId}");
+            Event = await Http.GetFromJsonAsync<AppEvent>($"api/events/{EventId}");
+            var users = await Http.GetFromJsonAsync<List<AppUser>>("api/users");
+
+            // Only users with lower or same-level roles can forward
+            ForwardableUsers = users
+                .Where(u => u.Username != Event?.Sender && u.Username != null)
+                .ToList();
         }
         catch (Exception ex)
         {
-            StatusService.ReportError("Failed to load event: " + ex.Message);
+            StatusService.ReportError($"Failed to load event or users: {ex.Message}");
         }
+        
     }
 
-    private async Task Resolve()
+    private async Task MarkAsActive()
     {
-        if (CurrentEvent == null) return;
-
-        CurrentEvent.State = EventState.Closed;
-        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
-        await SignalR.NotifyEventUpdated(CurrentEvent);
-        Nav.NavigateTo("/chat", true);
+        if (Event is null || IsClosed) return;
+        Event.State = EventState.Active;
+        await UpdateEvent("Event marked as active.");
     }
 
-    private async Task Promote()
+    private async Task ResolveEvent()
     {
-        if (CurrentEvent == null) return;
-
-        if (CurrentEvent.State == EventState.New)
-            CurrentEvent.State = EventState.Active;
-
-        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
-        await SignalR.NotifyEventUpdated(CurrentEvent);
+        if (Event is null || IsClosed) return;
+        Event.State = EventState.Closed;
+        await UpdateEvent("Event resolved successfully.");
     }
 
-    
-    private void ToChat()
+    private async Task ForwardEvent()
     {
-        Nav.NavigateTo("/chat", true);
+        if (Event is null || string.IsNullOrWhiteSpace(ForwardedTo)) return;
+        Event.ForwardedTo = ForwardedTo;
+        await UpdateEvent($"Event forwarded to {ForwardedTo}.");
     }
 
-    private async Task Forward(string username)
+    private void GoToChat()
     {
-        if (CurrentEvent == null) return;
+        Nav.NavigateTo($"/chat");
+    }
 
-        CurrentEvent.ForwardedTo = username;
-        await Http.PutAsJsonAsync("api/events/update", CurrentEvent);
-        await SignalR.NotifyEventUpdated(CurrentEvent);
+    private async Task UpdateEvent(string successMessage)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync("api/events/update", Event);
+            if (response.IsSuccessStatusCode)
+            {
+                StatusMessage = successMessage;
+            }
+            else
+            {
+                StatusService.ReportError($"Update failed: {response.ReasonPhrase}");
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusService.ReportError($"Error updating event: {ex.Message}");
+        }
     }
 }

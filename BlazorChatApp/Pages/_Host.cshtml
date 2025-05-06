@@ -20,10 +20,32 @@
     <base href="~/" />
 </head>
 <body>
-<app>
-    <component type="typeof(App)" render-mode="Server" />
-</app>
+    <app>
+        <component type="typeof(App)" render-mode="Server" />
+    </app>
 
-<script src="_framework/blazor.server.js"></script>
+    <script src="_framework/blazor.server.js"></script>
+    <script>
+        let originalTitle = document.title;
+        let flashInterval = null;
+
+        function startFlashingTitle(message) {
+            if (flashInterval) return;
+            let visible = true;
+            flashInterval = setInterval(() => {
+                document.title = visible ? message : originalTitle;
+                visible = !visible;
+            }, 1000);
+        }
+
+        function stopFlashingTitle() {
+            clearInterval(flashInterval);
+            flashInterval = null;
+            document.title = originalTitle;
+        }
+
+        window.addEventListener('focus', stopFlashingTitle);
+    </script>
+
 </body>
 </html>

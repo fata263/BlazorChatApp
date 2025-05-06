@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BlazorChatApp.Data;
+using System.Collections.Generic;
+using System.Linq;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -23,6 +25,26 @@ public class EventsController : ControllerBase
             return NotFound();
 
         return Ok(evt);
+    }
+
+    [HttpGet("recent")]
+    public async Task<ActionResult<List<AppEvent>>> GetRecentEvents()
+    {
+        var events = await _context.Events
+            .OrderByDescending(e => e.Timestamp)
+            .Take(20)
+            .ToListAsync();
+
+        return Ok(events);
+    }
+
+    // You may already have these
+    [HttpPost]
+    public async Task<ActionResult<AppEvent>> CreateEvent(AppEvent evt)
+    {
+        _context.Events.Add(evt);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(CreateEvent), new { id = evt.Id }, evt);
     }
 
     [HttpPut("update")]
