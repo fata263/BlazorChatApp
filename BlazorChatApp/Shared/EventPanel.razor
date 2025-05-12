@@ -1,60 +1,71 @@
-﻿@inject SignalRService SignalR
+﻿@using Microsoft.JSInterop
+@inject SignalRService SignalR
+@inject IJSRuntime JS
+@inject NavigationManager Nav
 
-<div class="event-panel-container">
-    <div class="event-group alarm-group">
-        <div class="event-group-header">🚨 Alarms</div>
-        <div class="event-scroll">
-            @if (Alarms.Count == 0)
-            {
-                <p class="empty-text">No alarms.</p>
-            }
-            else
-            {
-                @foreach (var evt in Alarms)
+@if (!isSessionLoaded)
+{
+    <p class="text-muted px-2">🔒 Please login to view events.</p>
+}
+else
+{
+    <div class="event-panel-container">
+        <div class="event-group alarm-group">
+            <div class="event-group-header">🚨 Alarms</div>
+            <div class="event-scroll">
+                @if (Alarms.Count == 0)
                 {
-                    <EventCard AppEvent="evt" ShowEdit="true" />
+                    <p class="empty-text">No alarms.</p>
                 }
-            }
+                else
+                {
+                    @foreach (var evt in Alarms)
+                    {
+                        <EventCard AppEvent="evt" ShowEdit="true" />
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="event-group incident-group">
+            <div class="event-group-header">🚧 Incidents</div>
+            <div class="event-scroll">
+                @if (Incidents.Count == 0)
+                {
+                    <p class="empty-text">No incidents.</p>
+                }
+                else
+                {
+                    @foreach (var evt in Incidents)
+                    {
+                        <EventCard AppEvent="evt" ShowEdit="true" />
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="event-group message-group">
+            <div class="event-group-header">💬 Messages</div>
+            <div class="event-scroll">
+                @if (Messages.Count == 0)
+                {
+                    <p class="empty-text">No messages.</p>
+                }
+                else
+                {
+                    @foreach (var evt in Messages)
+                    {
+                        <EventCard AppEvent="evt" ShowEdit="true" />
+                    }
+                }
+            </div>
         </div>
     </div>
-
-    <div class="event-group incident-group">
-        <div class="event-group-header">🚧 Incidents</div>
-        <div class="event-scroll">
-            @if (Incidents.Count == 0)
-            {
-                <p class="empty-text">No incidents.</p>
-            }
-            else
-            {
-                @foreach (var evt in Incidents)
-                {
-                    <EventCard AppEvent="evt" ShowEdit="true" />
-                }
-            }
-        </div>
-    </div>
-
-    <div class="event-group message-group">
-        <div class="event-group-header">💬 Messages</div>
-        <div class="event-scroll">
-            @if (Messages.Count == 0)
-            {
-                <p class="empty-text">No messages.</p>
-            }
-            else
-            {
-                @foreach (var evt in Messages)
-                {
-                    <EventCard AppEvent="evt" ShowEdit="true" />
-                }
-            }
-        </div>
-    </div>
-</div>
+}
 
 @code {
     public List<AppEvent> IncomingEvents { get; set; } = new();
+    private bool isSessionLoaded = false;
 
     private List<AppEvent> Alarms => IncomingEvents
         .Where(e => e.Type == EventType.Alarm)
@@ -73,14 +84,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SignalR.OnEventReceived += async _ => await InvokeAsync(StateHasChanged);
-        SignalR.OnEventUpdated += async _ => await InvokeAsync(StateHasChanged);
+        var username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username");
+
+        if (string.IsNullOrEmpty(username))
+        {
+            return;
+        }
+
+        isSessionLoaded = true;
+
+        SignalR.OnEventReceived += HandleIncomingEvent;
+        SignalR.OnEventUpdated += HandleIncomingEvent;
 
         var recentEvents = await SignalR.LoadRecentEventsAsync();
 
         if (recentEvents != null)
             IncomingEvents = recentEvents;
 
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleIncomingEvent(AppEvent evt)
+    {
         await InvokeAsync(StateHasChanged);
     }
 }

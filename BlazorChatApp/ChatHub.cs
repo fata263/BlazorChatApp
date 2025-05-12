@@ -82,11 +82,11 @@ public class ChatHub(ChatDbContext context, AppStatusService statusService, User
 
             if (scope == "All")
             {
-                await Clients.All.SendAsync("ReceiveEvent", evt);
+                await Clients?.All?.SendAsync("ReceiveEvent", evt)!;
             }
             else if (scope == "Station" && evt.StationId.HasValue)
             {
-                await Clients.Group($"Station-{evt.StationId.Value}").SendAsync("ReceiveEvent", evt);
+                await Clients?.Group($"Station-{evt.StationId.Value}")?.SendAsync("ReceiveEvent", evt)!;
             }
             else if (scope == "User" && !string.IsNullOrEmpty(targetUser))
             {
@@ -95,7 +95,7 @@ public class ChatHub(ChatDbContext context, AppStatusService statusService, User
                     .Select(kv => kv.Key);
 
                 foreach (var connId in connIds)
-                    await Clients.Client(connId).SendAsync("ReceiveEvent", evt);
+                    await Clients?.Client(connId)?.SendAsync("ReceiveEvent", evt);
             }
         }
         catch (Exception ex)
@@ -137,7 +137,7 @@ public class ChatHub(ChatDbContext context, AppStatusService statusService, User
         await context.SaveChangesAsync();
 
         // Optionally broadcast update
-        await Clients.All.SendAsync("EventUpdated", evt);
+        await Clients?.All.SendAsync("EventUpdated", evt);
     }
 
     public async Task NotifyActiveUsers()
@@ -145,7 +145,7 @@ public class ChatHub(ChatDbContext context, AppStatusService statusService, User
         try
         {
             var users = await userService.GetActiveUsers();
-            await Clients.All.SendAsync("UserListUpdated", users); 
+            await Clients?.All.SendAsync("UserListUpdated", users); 
         }
         catch (Exception ex)
         {

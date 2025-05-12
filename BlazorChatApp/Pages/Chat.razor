@@ -52,45 +52,54 @@ else
     {
         if (!firstRender || Initialized) return;
 
-        Username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username") ?? "";
-        var stationId = int.Parse(await JS.InvokeAsync<string>("sessionStorage.getItem", "stationId"));
-
-        if (string.IsNullOrWhiteSpace(Username))
+        try
         {
-            Nav.NavigateTo("/login", true);
-            return;
-        }
 
-        await SignalR.StartAsync(Nav.BaseUri, Username, stationId);
-        var recentEvents = await SignalR.LoadRecentEventsAsync();
-        if (recentEvents != null)
-            IncomingEvents = recentEvents;
+            Username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username") ?? "";
+            var stationStr = await JS.InvokeAsync<string>("sessionStorage.getItem", "stationId");
 
-        SignalR.OnEventReceived += async evt =>
-        {
-            if (IncomingEvents.All(e => e.Id != evt.Id))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(stationStr) || !int.TryParse(stationStr, out int stationId))
             {
-                IncomingEvents.Insert(0, evt);
-                if (IncomingEvents.Count > 20)
-                    IncomingEvents = IncomingEvents.Take(20).ToList();
+                Nav.NavigateTo("/login", true);
+                return;
+            }
+
+            await SignalR.StartAsync(Nav.BaseUri, Username, stationId);
+            var recentEvents = await SignalR.LoadRecentEventsAsync();
+            if (recentEvents != null)
+                IncomingEvents = recentEvents;
+
+            SignalR.OnEventReceived += async evt =>
+            {
+                if (IncomingEvents.All(e => e.Id != evt.Id))
+                {
+                    IncomingEvents.Insert(0, evt);
+                    if (IncomingEvents.Count > 20)
+                        IncomingEvents = IncomingEvents.Take(20).ToList();
+
+                    await InvokeAsync(StateHasChanged);
+                }
+            };
+
+            SignalR.OnEventUpdated += async updated =>
+            {
+                var index = IncomingEvents.FindIndex(e => e.Id == updated.Id);
+                if (index >= 0)
+                    IncomingEvents[index] = updated;
+                else
+                    IncomingEvents.Insert(0, updated);
 
                 await InvokeAsync(StateHasChanged);
-            }
-        };
+            };
 
-        SignalR.OnEventUpdated += async updated =>
-        {
-            var index = IncomingEvents.FindIndex(e => e.Id == updated.Id);
-            if (index >= 0)
-                IncomingEvents[index] = updated;
-            else
-                IncomingEvents.Insert(0, updated);
-
+            Initialized = true;
             await InvokeAsync(StateHasChanged);
-        };
 
-        Initialized = true;
-        await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            StatusService.Report(e.Message, LogLevel.Error);
+        }
     }
 
     private void EditEvent(int eventId)
@@ -118,7 +127,7 @@ else
 
             return $"💬 {desc}";
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             StatusService.ReportError(ex.Message);
             return "(invalid data)";

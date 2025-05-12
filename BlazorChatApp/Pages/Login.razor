@@ -58,6 +58,7 @@ else
             if (loggedInUser == null || selected == null) return;
 
             await JS.InvokeVoidAsync("sessionStorage.setItem", "username", loggedInUser.Username);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "fullName", loggedInUser.FullName);
             await JS.InvokeVoidAsync("sessionStorage.setItem", "stationId", selected.Id.ToString());
             await JS.InvokeVoidAsync("sessionStorage.setItem", "stationName", selected.Name);
 

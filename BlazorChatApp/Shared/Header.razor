@@ -1,29 +1,42 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JS
 
-<NavMenu />
-@if (!string.IsNullOrEmpty(Username))
-{
-    <header class="main-header">
-        <div><b>👤 @FullName</b> | <i>@Role</i> | 🆔 @Username</div>
-        <div>📍 Station: <b>@StationName</b> | Supervisor: <b>@Supervisor</b></div>
-    </header>
-}
+<div class="app-header">
+    <div class="header-left">
+        <span class="logo">🛠️ Tire Alert System</span>
+        <span class="station-name">— Station: @(StationName ?? "(Unknown)")</span>
+    </div>
+    <div class="header-right">
+        <span class="user-icon">👤</span>
+        <span>@(FullName ?? "Guest")</span>
+    </div>
+</div>
 
 @code {
-    private string Username = "", FullName = "", Role = "", StationName = "", Supervisor = "";
+    private string? StationName;
+    private string? FullName;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        Username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username") ?? "";
-        FullName = $"{await JS.InvokeAsync<string>("sessionStorage.getItem", "firstName")} {await JS.InvokeAsync<string>("sessionStorage.getItem", "lastName")}";
-        Role = await JS.InvokeAsync<string>("sessionStorage.getItem", "role") ?? "";
-        StationName = await JS.InvokeAsync<string>("sessionStorage.getItem", "stationName") ?? "";
-        Supervisor = await JS.InvokeAsync<string>("sessionStorage.getItem", "supervisor") ?? "";
+        try
+        {
+            var username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username");
+            var fullName = await JS.InvokeAsync<string>("sessionStorage.getItem", "fullName");
+            var station = await JS.InvokeAsync<string>("sessionStorage.getItem", "stationName");
 
-        await InvokeAsync(StateHasChanged);
+            StationName = string.IsNullOrEmpty(station) ? "(Unknown)" : station;
+            FullName = string.IsNullOrWhiteSpace(fullName)
+                ? username
+                : $"{fullName}";
+
+            StateHasChanged();
+        }
+        catch
+        {
+            StationName = "(Unknown)";
+            FullName = "Guest";
+        }
     }
-
 }
