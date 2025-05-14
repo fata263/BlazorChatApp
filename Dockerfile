@@ -5,10 +5,10 @@ EXPOSE 5001
 FROM mcr.microsoft.com/dotnet/sdk:9.0-preview AS build
 WORKDIR /src
 COPY ["BlazorChatApp/BlazorChatApp.csproj", "BlazorChatApp/"]
-RUN dotnet restore "BlazorChatApp/BlazorChatApp.csproj"
+RUN dotnet restore "BlazorChatApp/BlazorChatApp.csproj" --configfile Nuget.config 
 COPY . .
 WORKDIR "/src/BlazorChatApp"
-RUN dotnet build "BlazorChatApp.csproj" -c Release -o /app/build
+RUN dotnet build "BlazorChatApp.csproj" -c Release -o /app/build --verbosity detailed
 RUN dotnet publish "BlazorChatApp.csproj" -c Release -o /app/publish
 
 FROM base AS final

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: blazorchatapp
+      IMAGE_NAME: blazorchatappnet9
 
     steps:
       - name: Checkout source code
@@ -26,10 +26,10 @@ jobs:
       - name: Set image tags
         run: |
           echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
-
+          
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest .
+          docker build --progress=plain -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest .
           docker tag ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Push Docker images

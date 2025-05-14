@@ -6,7 +6,7 @@ using System;
 using System.Net.Http;
 using BlazorChatApp.services;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
@@ -32,7 +32,12 @@ builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
 
-builder.Logging.AddFile("logs/app.log");
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day)
+        .WriteTo.Console();
+});
 
 var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
 int.TryParse(portStr, out var port);
