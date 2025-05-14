@@ -14,4 +14,5 @@ RUN dotnet publish "BlazorChatApp.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+EXPOSE 5000
 ENTRYPOINT ["dotnet", "BlazorChatApp.dll"]
