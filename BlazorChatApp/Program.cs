@@ -35,9 +35,12 @@ builder.Services.AddScoped<AppStatusService>();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
+int.TryParse(portStr, out var port);
+
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(5001); // HTTP only
+    options.ListenAnyIP(port); // HTTP only
 });
 
 var app = builder.Build();

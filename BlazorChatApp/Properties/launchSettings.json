@@ -5,7 +5,8 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "BaseUrl": "http://localhost:5001"
+        "BaseUrl": "http://localhost:5001",
+        "ListeningPort": "5001"
       },
       "applicationUrl": "http://localhost:5001"
     }
