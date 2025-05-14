@@ -5,9 +5,9 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "BaseUrl": "https://api.example.com"
+        "BaseUrl": "http://localhost:5001"
       },
-      "applicationUrl": "http://localhost:64779"
+      "applicationUrl": "http://localhost:5001"
     }
   }
 }
