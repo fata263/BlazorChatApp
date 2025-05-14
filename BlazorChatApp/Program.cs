@@ -32,8 +32,7 @@ builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Logging.AddFile("logs/app.log");
 
 var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
 int.TryParse(portStr, out var port);
