@@ -6,7 +6,9 @@ using System;
 using System.Net.Http;
 using BlazorChatApp.services;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Serilog;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
@@ -38,6 +40,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day)
         .WriteTo.Console();
 });
+builder.Logging.AddConsole();
 
 var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
 int.TryParse(portStr, out var port);
@@ -48,6 +51,8 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
+app.Logger.LogInformation("Application starting up...");
+app.MapGet("/health", () => Results.Ok("Healthy"));
 
 using (var scope = app.Services.CreateScope())
 {
