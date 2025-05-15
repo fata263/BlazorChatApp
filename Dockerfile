@@ -12,12 +12,11 @@ WORKDIR "/src/BlazorChatApp"
 RUN dotnet build "BlazorChatApp.csproj" -c Release -o /app/build 
 RUN dotnet publish "BlazorChatApp.csproj" -c Release -o /app/publish --verbosity detailed
 
-FROM base AS final00
+FROM base AS final
 WORKDIR /app
-# Debug: List contents of publish directory before copying
 COPY --from=build /app/publish .
 RUN ls -la
+RUN dotnet --list-runtimes
 EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD curl --fail http://localhost:5001/health || exit 1
-# ENTRYPOINT ["dotnet", "BlazorChatApp.dll"]
-ENTRYPOINT ["sh", "-c", "dotnet $(ls *.dll | grep -i blazorchatapp | head -n 1)"]
+ENTRYPOINT ["dotnet", "BlazorChatApp.dll"]
