@@ -6,21 +6,20 @@ using System;
 using System.Net.Http;
 using BlazorChatApp.services;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Serilog;
 using Microsoft.Extensions.Logging;
 using System.Collections;
 using System.Linq;
+using Azure.Storage.Blobs;
+using Azure.Identity;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole(options =>
-{
-    options.IncludeScopes = true;
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-});
+builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
 
 builder.Services.AddHttpClient("ServerAPI", client =>
@@ -29,7 +28,7 @@ builder.Services.AddHttpClient("ServerAPI", client =>
     Console.WriteLine("Base URL: " + baseUrl);
     client.BaseAddress = new Uri(baseUrl);
 });
-// ✅ Provide a default HttpClient via DI
+
 builder.Services.AddScoped(sp =>
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 
@@ -42,22 +41,35 @@ builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
 
+if (builder.Environment.IsDevelopment())
+{
+    //builder.Services.AddDataProtection()
+    //    .PersistKeysToFileSystem(new DirectoryInfo("keys")); // Store keys locally
+}
+else
+{
+    var blobServiceClient = new BlobServiceClient(
+        new Uri("https://blazorchatappdata.blob.core.windows.net/"),
+        new DefaultAzureCredential());
+    var blobUri = new Uri("https://blazorchatappdata.blob.core.windows.net/dataprotection/keys.xml");
+    var credential = new DefaultAzureCredential();
+
+    builder.Services.AddDataProtection()
+        .PersistKeysToAzureBlobStorage(blobUri, credential);
+
+}
+
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
-        .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day)
         .WriteTo.Console();
 });
-builder.Logging.AddConsole(options =>
-{
-    options.IncludeScopes = true;
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-});
-builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug); // Change from Information to Debug
-builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Debug); // Detailed ASP.NET Core logs
-builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR logs
-builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR connection logs
-builder.Logging.AddFilter("BlazorChatApp", Microsoft.Extensions.Logging.LogLevel.Debug); // Custom logs for your app namespace
+builder.Logging.AddConsole();
+//builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug); // Change from Information to Debug
+//builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Debug); // Detailed ASP.NET Core logs
+//builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR logs
+//builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR connection logs
+//builder.Logging.AddFilter("BlazorChatApp", Microsoft.Extensions.Logging.LogLevel.Debug); // Custom logs for your app namespace
 
 var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
 int.TryParse(portStr, out var port);
@@ -65,6 +77,7 @@ int.TryParse(portStr, out var port);
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(port); // HTTP only
+   
 });
 
 var app = builder.Build();
@@ -77,13 +90,11 @@ logger.LogDebug("Environment variables: {EnvVars}", Environment.GetEnvironmentVa
 
 try
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        logger.LogInformation("Initializing database...");
-        DbInitializer.Initialize(services);
-        logger.LogInformation("Database initialized successfully.");
-    }
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    logger.LogInformation("Initializing database...");
+    DbInitializer.Initialize(services);
+    logger.LogInformation("Database initialized successfully.");
 }
 catch (Exception ex)
 {
@@ -94,13 +105,13 @@ catch (Exception ex)
 app.UseStaticFiles();
 app.UseRouting();
 app.MapControllers();
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    logger.LogDebug("Request Path: {Path}, Method: {Method}", context.Request.Path, context.Request.Method);
-    await next(context);
-    logger.LogDebug("Response Status Code: {StatusCode}", context.Response.StatusCode);
-});
+//app.Use(async (context, next) =>
+//{
+//    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+//    logger.LogDebug("Request Path: {Path}, Method: {Method}", context.Request.Path, context.Request.Method);
+//    await next(context);
+//    logger.LogDebug("Response Status Code: {StatusCode}", context.Response.StatusCode);
+//});
 
 app.MapBlazorHub();
 app.MapHub<ChatHub>("/chathub", options =>
