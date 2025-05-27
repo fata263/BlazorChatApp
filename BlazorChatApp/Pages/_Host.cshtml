@@ -9,23 +9,21 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Blazor Chat App</title>
-
-    <!-- ✅ Load your custom site.css here -->
-    <link href="/css/site.css" rel="stylesheet" />
-
-    <!-- Blazor and base href -->
+    <title>Tire Alert System</title>
     <base href="~/" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="BlazorChatApp.styles.css" rel="stylesheet" /> 
+    <script src="_framework/blazor.server.js"></script>
 </head>
 <body>
-    <app>
-        <component type="typeof(App)" render-mode="Server" />
-    </app>
+<app>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+</app>
 
     <script src="_framework/blazor.server.js"></script>
-    <script>
+
+    @*     <script>
         let originalTitle = document.title;
         let flashInterval = null;
 
@@ -45,7 +43,7 @@
         }
 
         window.addEventListener('focus', stopFlashingTitle);
-    </script>
+    </script> *@
 
 </body>
 </html>

@@ -1,15 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<BlazorWebAssemblyEnableCompression>false</BlazorWebAssemblyEnableCompression>
+		<StaticWebAssetBasePath>_framework</StaticWebAssetBasePath>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.5" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="wwwroot\**\*;**\*.razor.css" CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Azure.Identity" Version="1.14.0" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.AzureStorage" Version="3.1.24" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0-preview.4.25258.110" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.5" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.5" />
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Update="wwwroot\css\site.css">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="wwwroot\emojipicker.js">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 </Project>

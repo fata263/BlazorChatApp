@@ -1,26 +1,27 @@
 ﻿using BlazorChatApp.Data;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
-using BlazorChatApp.services;
-using Microsoft.AspNetCore.Hosting;
-using Serilog;
-using Microsoft.Extensions.Logging;
-using System.Collections;
-using System.Linq;
-using Azure.Storage.Blobs;
 using Azure.Identity;
-using Microsoft.Extensions.Hosting;
+using Azure.Storage.Blobs;
+using BlazorChatApp.services;
+using Serilog;
 using Microsoft.AspNetCore.DataProtection;
+using BlazorChatApp;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
+builder.Services.AddRazorPages(); // For _Host.cshtml
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddServerSideBlazor();
+builder.Services.AddSignalR();
+builder.Services.AddControllers();
+
+// Add authentication and authorization if applicable
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 102400; // Increase if needed
+});
 
 builder.Services.AddHttpClient("ServerAPI", client =>
 {
@@ -32,19 +33,23 @@ builder.Services.AddHttpClient("ServerAPI", client =>
 builder.Services.AddScoped(sp =>
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("ServerAPI"));
 
-builder.Services.AddSignalR();
 builder.Services.AddDbContext<ChatDbContext>(options =>
     options.UseSqlite("Data Source=chat.db"));
-builder.Services.AddControllers();
 
 builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
 
+// Logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
+
 if (builder.Environment.IsDevelopment())
 {
-    //builder.Services.AddDataProtection()
-    //    .PersistKeysToFileSystem(new DirectoryInfo("keys")); // Store keys locally
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("keys"));
+
 }
 else
 {
@@ -54,72 +59,81 @@ else
     var blobUri = new Uri("https://blazorchatappdata.blob.core.windows.net/dataprotection/keys.xml");
     var credential = new DefaultAzureCredential();
 
-    builder.Services.AddDataProtection()
-        .PersistKeysToAzureBlobStorage(blobUri, credential);
+    //builder.Services.AddDataProtection()
+    //    .PersistKeysToAzureBlobStorage(blobUri, credential);
 
 }
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {
-    configuration
-        .WriteTo.Console();
+    configuration.WriteTo.Console();
 });
 builder.Logging.AddConsole();
-//builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug); // Change from Information to Debug
-//builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Debug); // Detailed ASP.NET Core logs
-//builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR logs
-//builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR connection logs
-//builder.Logging.AddFilter("BlazorChatApp", Microsoft.Extensions.Logging.LogLevel.Debug); // Custom logs for your app namespace
+builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug); // Change from Information to Debug
+builder.Logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Debug); // Detailed ASP.NET Core logs
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR logs
+builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", Microsoft.Extensions.Logging.LogLevel.Debug); // SignalR connection logs
+builder.Logging.AddFilter("BlazorChatApp", Microsoft.Extensions.Logging.LogLevel.Debug); // Custom logs for your app namespace
 
 var portStr = Environment.GetEnvironmentVariable("ListeningPort") ?? "5001";
 int.TryParse(portStr, out var port);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(port); // HTTP only
-   
+    options.ListenAnyIP(port, listenOptions =>
+    {
+        //listenOptions.UseHttps(); // Optional
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1;
+    });
 });
 
 var app = builder.Build();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+}
 
 app.Logger.LogInformation("Application starting up...");
-
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Application starting up...");
-logger.LogDebug("Environment variables: {EnvVars}", Environment.GetEnvironmentVariables().Cast<DictionaryEntry>().ToDictionary(e => e.Key, e => e.Value));
 
 try
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("Initializing database...");
     DbInitializer.Initialize(services);
     logger.LogInformation("Database initialized successfully.");
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Failed to initialize database.");
+    app.Logger.LogError(ex, "Failed to initialize database.");
     throw; // Rethrow to ensure the app fails and logs are captured
 }
 
-app.UseStaticFiles();
-app.UseRouting();
-app.MapControllers();
-//app.Use(async (context, next) =>
-//{
-//    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-//    logger.LogDebug("Request Path: {Path}, Method: {Method}", context.Request.Path, context.Request.Method);
-//    await next(context);
-//    logger.LogDebug("Response Status Code: {StatusCode}", context.Response.StatusCode);
-//});
+app.UseStaticFiles(); // ✅ MUST come BEFORE routing
 
-app.MapBlazorHub();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
+
+// ✅ Blazor Server mapping:
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+app.MapControllers();
+
 app.MapHub<ChatHub>("/chathub", options =>
 {
-    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets;
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
+                         Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
 });
 app.MapGet("/health", () => "Healthy");
+
+app.MapRazorComponents<App>();
+
 app.MapFallbackToPage("/_Host");
 
-logger.LogInformation("Application startup completed. Listening on port 5001...");
+app.Logger.LogInformation("Application startup completed. Listening on port 5001...");
+
 app.Run();

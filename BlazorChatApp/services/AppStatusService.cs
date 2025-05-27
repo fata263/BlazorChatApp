@@ -1,5 +1,6 @@
 ﻿using BlazorChatApp.Data;
 using System;
+using LogLevel = BlazorChatApp.Data.LogLevel;
 
 namespace BlazorChatApp.services
 {
