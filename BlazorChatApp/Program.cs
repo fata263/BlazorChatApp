@@ -117,7 +117,7 @@ app.MapBlazorHub();
 
 
 app.MapHub<ChatHub>("/chathub");
-app.MapGet("/health", () => "Healthy");
+app.UseHealthChecks("/health");
 
 app.MapFallbackToPage("/_Host");
 
