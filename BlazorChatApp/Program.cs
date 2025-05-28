@@ -19,7 +19,7 @@ builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.De
 //builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
-
+builder.Services.AddHealthChecks();
 // Add authentication and authorization if applicable
 //builder.Services.AddAuthentication();
 //builder.Services.AddAuthorization();
