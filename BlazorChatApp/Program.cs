@@ -114,9 +114,9 @@ app.UseStaticFiles(); // ✅ MUST come BEFORE routing
 
 app.UseRouting();
 
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAntiforgery();
 
 // ✅ Blazor Server mapping:
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
@@ -129,8 +129,6 @@ app.MapHub<ChatHub>("/chathub", options =>
                          Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
 });
 app.MapGet("/health", () => "Healthy");
-
-app.MapRazorComponents<App>();
 
 app.MapFallbackToPage("/_Host");
 
