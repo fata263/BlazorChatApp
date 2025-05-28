@@ -14,8 +14,9 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages(); // For _Host.cshtml
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
+//builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+//builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
@@ -40,11 +41,6 @@ builder.Services.AddDbContext<ChatDbContext>(options =>
 builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
-
-// Logging
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
 
 if (builder.Environment.IsDevelopment())
 {
@@ -85,7 +81,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
 }
