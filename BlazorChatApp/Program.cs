@@ -1,11 +1,16 @@
-﻿using BlazorChatApp.Data;
+﻿using System;
+using System.Net.Http;
+using BlazorChatApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using BlazorChatApp.services;
 using Serilog;
-using Microsoft.AspNetCore.DataProtection;
-using BlazorChatApp;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages(); // For _Host.cshtml
@@ -15,13 +20,9 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
 // Add authentication and authorization if applicable
-builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthentication();
+//builder.Services.AddAuthorization();
 
-builder.Services.AddSignalR(options =>
-{
-    options.MaximumReceiveMessageSize = 102400; // Increase if needed
-});
 
 builder.Services.AddHttpClient("ServerAPI", client =>
 {
@@ -47,8 +48,8 @@ builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
 
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("keys"));
+    //builder.Services.AddDataProtection()
+    //    .PersistKeysToFileSystem(new DirectoryInfo("keys"));
 
 }
 else
@@ -80,11 +81,7 @@ int.TryParse(portStr, out var port);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(port, listenOptions =>
-    {
-        //listenOptions.UseHttps(); // Optional
-        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1;
-    });
+    options.ListenAnyIP(port);
 });
 
 var app = builder.Build();
@@ -114,20 +111,16 @@ app.UseStaticFiles(); // ✅ MUST come BEFORE routing
 
 app.UseRouting();
 
-app.UseAntiforgery();
-app.UseAuthentication();
-app.UseAuthorization();
+app.MapControllers();
+//app.UseAntiforgery();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
 // ✅ Blazor Server mapping:
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapBlazorHub();
 
-app.MapControllers();
 
-app.MapHub<ChatHub>("/chathub", options =>
-{
-    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
-                         Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
-});
+app.MapHub<ChatHub>("/chathub");
 app.MapGet("/health", () => "Healthy");
 
 app.MapFallbackToPage("/_Host");
