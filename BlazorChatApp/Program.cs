@@ -50,11 +50,11 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    var blobServiceClient = new BlobServiceClient(
-        new Uri("https://blazorchatappdata.blob.core.windows.net/"),
-        new DefaultAzureCredential());
-    var blobUri = new Uri("https://blazorchatappdata.blob.core.windows.net/dataprotection/keys.xml");
-    var credential = new DefaultAzureCredential();
+    //var blobServiceClient = new BlobServiceClient(
+    //    new Uri("https://blazorchatappdata.blob.core.windows.net/"),
+    //    new DefaultAzureCredential());
+    //var blobUri = new Uri("https://blazorchatappdata.blob.core.windows.net/dataprotection/keys.xml");
+    //var credential = new DefaultAzureCredential();
 
     //builder.Services.AddDataProtection()
     //    .PersistKeysToAzureBlobStorage(blobUri, credential);
