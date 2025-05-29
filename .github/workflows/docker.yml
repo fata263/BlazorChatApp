@@ -12,6 +12,7 @@ jobs:
 
     env:
       IMAGE_NAME: blazorchatappnet9
+      DEBUG: true
 
     steps:
       - name: Checkout source code
@@ -34,6 +35,9 @@ jobs:
           docker run --rm ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest ls -la /app
           docker tag ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
+      - name: Verify Docker image
+        run: docker images
+        
       - name: Push Docker images
         run: |
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
