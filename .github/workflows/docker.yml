@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # Fail after 30 minutes
+    timeout-minutes: 60  # Fail after 30 minutes
 
     env:
       IMAGE_NAME: blazorchatappnet9
@@ -42,7 +42,7 @@ jobs:
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
-          appName: test01
+          appName: gwc6195blazortest01
           resourceGroup: weu-6195-WIT-rg
           acrName: weu6195witregistry01
           acrUsername: ${{ secrets.ACR_USERNAME }}
