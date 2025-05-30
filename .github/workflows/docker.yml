@@ -45,7 +45,7 @@ jobs:
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
-          appName: gwc6195blazortest01
+          containerAppName: gwc6195blazortest01
           resourceGroup: weu-6195-WIT-rg
           acrName: weu6195witregistry01
           acrUsername: ${{ secrets.ACR_USERNAME }}
