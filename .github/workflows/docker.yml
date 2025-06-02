@@ -42,12 +42,12 @@ jobs:
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          containerAppName: gwc6195blazortest01
-          resourceGroup: weu-6195-WIT-rg
-          acrName: weu6195witregistry01
-          acrUsername: ${{ secrets.ACR_USERNAME }}
-          acrPassword: ${{ secrets.ACR_PASSWORD }}
-          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+      # - name: Deploy to Azure Container Apps
+      #   uses: azure/container-apps-deploy-action@v1
+      #   with:
+      #     containerAppName: gwc6195blazortest01
+      #     resourceGroup: weu-6195-WIT-rg
+      #     acrName: weu6195witregistry01
+      #     acrUsername: ${{ secrets.ACR_USERNAME }}
+      #     acrPassword: ${{ secrets.ACR_PASSWORD }}
+      #     imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
