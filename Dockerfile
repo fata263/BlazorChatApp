@@ -2,8 +2,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+
+# Copy solution and project files
 COPY *.sln ./
 COPY ["BlazorChatApp/Nuget.config", "."]
 COPY BlazorChatApp/*.csproj ./BlazorChatApp/
@@ -11,7 +14,10 @@ COPY BlazorChatApp/*.csproj ./BlazorChatApp/
 # Restore dependencies
 RUN dotnet restore BlazorChatApp/BlazorChatApp.csproj --configfile Nuget.config
 
+# Copy the rest of the source code
 COPY . .
+
+# Build and publish the app
 WORKDIR "/src/BlazorChatApp"
 RUN dotnet publish "BlazorChatApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
