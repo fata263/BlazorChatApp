@@ -86,7 +86,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        // if (!firstRender) return;
         try
         {
             var username = await JS.InvokeAsync<string>("sessionStorage.getItem", "username");

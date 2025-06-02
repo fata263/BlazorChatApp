@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BlazorChatApp.Data;
 
@@ -20,11 +21,14 @@ public class AppUser
     public UserRole Role { get; set; }
 
     public int? SupervisorId { get; set; }
+    [JsonIgnore]
     public AppUser? Supervisor { get; set; }
     public int? StationId { get; set; }
 
     [ForeignKey("StationId")]
     public Station? Station { get; set; }
+
+    [JsonIgnore]
     public ICollection<AppUser>? Subordinates { get; set; }
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";

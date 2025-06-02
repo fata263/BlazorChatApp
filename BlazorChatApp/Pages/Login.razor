@@ -41,9 +41,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Stations = await Http.GetFromJsonAsync<List<Station>>("api/stations");
-        if (Stations?.Any() == true)
-            SelectedStationId = Stations.First().Id;
+        try
+        {
+            Stations = await Http.GetFromJsonAsync<List<Station>>("api/stations");
+            if (Stations?.Any() == true)
+                SelectedStationId = Stations.First().Id;
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 
     private async Task UserLogin()

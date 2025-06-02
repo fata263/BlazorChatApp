@@ -18,7 +18,7 @@ RUN dotnet restore BlazorChatApp/BlazorChatApp.csproj --configfile Nuget.config
 COPY . .
 
 # Build and publish the app
-WORKDIR "/src/BlazorChatApp"
+WORKDIR /src/BlazorChatApp
 RUN dotnet publish "BlazorChatApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
@@ -28,7 +28,7 @@ COPY --from=build /app/publish .
 
 RUN ls -la
 RUN ls -la wwwroot
-RUN dotnet --list-runtimes
+
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 # HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD curl --fail http://localhost:5001/health || exit 1

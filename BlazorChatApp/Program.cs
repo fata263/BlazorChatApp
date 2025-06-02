@@ -11,19 +11,16 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages(); // For _Host.cshtml
 builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
-//builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-//builder.Services.AddServerSideBlazor();
+
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
-builder.Services.AddHealthChecks();
-// Add authentication and authorization if applicable
-//builder.Services.AddAuthentication();
-//builder.Services.AddAuthorization();
 
+builder.Services.AddHealthChecks();
 
 builder.Services.AddHttpClient("ServerAPI", client =>
 {
@@ -41,25 +38,6 @@ builder.Services.AddDbContext<ChatDbContext>(options =>
 builder.Services.AddScoped<SignalRService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AppStatusService>();
-
-if (builder.Environment.IsDevelopment())
-{
-    //builder.Services.AddDataProtection()
-    //    .PersistKeysToFileSystem(new DirectoryInfo("keys"));
-
-}
-else
-{
-    //var blobServiceClient = new BlobServiceClient(
-    //    new Uri("https://blazorchatappdata.blob.core.windows.net/"),
-    //    new DefaultAzureCredential());
-    //var blobUri = new Uri("https://blazorchatappdata.blob.core.windows.net/dataprotection/keys.xml");
-    //var credential = new DefaultAzureCredential();
-
-    //builder.Services.AddDataProtection()
-    //    .PersistKeysToAzureBlobStorage(blobUri, credential);
-
-}
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {
